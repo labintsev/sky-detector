@@ -51,10 +51,10 @@ class CnnDataset(Dataset):
         grid = torch.zeros((self.grid_size, self.grid_size, self.num_classes), dtype=torch.float32)
         for cls_, x_min, y_min, x_max, y_max in labels:
             # Map bounding box coordinates to grid cells
-            x_min_cell = np.floor(x_min * self.grid_size).astype(int)
-            y_min_cell = np.floor(y_min * self.grid_size).astype(int)
-            x_max_cell = np.ceil(x_max * self.grid_size).astype(int)
-            y_max_cell = np.ceil(y_max * self.grid_size).astype(int)
+            x_min_cell = int(round(x_min * self.grid_size))
+            y_min_cell = int(round(y_min * self.grid_size))
+            x_max_cell = int(round(x_max * self.grid_size))
+            y_max_cell = int(round(y_max * self.grid_size))
             grid[y_min_cell:y_max_cell, x_min_cell:x_max_cell, cls_] = 1.0
 
         return grid
