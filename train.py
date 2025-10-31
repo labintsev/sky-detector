@@ -11,7 +11,6 @@ from cnn import CnnDataset, CnnDetector, CnnLoss
 
 def train_cnn(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    args.S = 64
     ds = CnnDataset(args.images, img_size=args.img_size, grid_size=args.S, num_classes=args.C)
 
     dl = DataLoader(ds, batch_size=args.batch, shuffle=True, num_workers=2, pin_memory=True)
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     p.add_argument("--batch", type=int, default=8, help="размер батча")
     p.add_argument("--lr", type=float, default=1e-3, help="learning rate")
     p.add_argument("--img-size", type=int, default=512, help="размер входного изображения")
-    p.add_argument("--S", type=int, default=8, help="размер сетки SxS")
+    p.add_argument("--S", type=int, default=64, help="размер сетки SxS")
     p.add_argument("--B", type=int, default=1, help="количество боксов на ячейку")
     p.add_argument("--C", type=int, default=2, help="количество классов")
     p.add_argument("--save-every", type=int, default=10, help="сохранять модель каждые N эпох")
