@@ -80,11 +80,6 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
     model.load_state_dict(ckpt["model"])
     model.eval()
 
-    transform = transforms.Compose([
-        transforms.Resize((img_size, img_size)),
-        transforms.ToTensor(),
-    ])
-
     dataset = CnnDataset(images_dir, img_size=img_size, grid_size=64, num_classes=2)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
 
@@ -124,5 +119,5 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     # пример тестирования
-    test_checkpoint = os.path.join(args.out_dir, "cnn_epoch20.pt")
+    test_checkpoint = os.path.join(args.out_dir, "cnn_epoch100.pt")
     test_cnn(test_checkpoint, args.images, args.img_size)

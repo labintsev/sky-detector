@@ -20,7 +20,7 @@ def visualize_cnn_filters(model: CnnDetector):
         filt = weights[i, 0, :, :]  # assuming single channel input
         ax.imshow(filt, cmap='gray')
         ax.axis('off')
-    plt.show()
+    plt.savefig('filters.png')
 
 if __name__ == "__main__":
     model = CnnDetector(num_classes=2)

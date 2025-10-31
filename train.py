@@ -16,7 +16,7 @@ def train_cnn(args):
     dl = DataLoader(ds, batch_size=args.batch, shuffle=True, num_workers=2, pin_memory=True)
     model = CnnDetector(num_classes=args.C).to(device)
     criterion = CnnLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=0.01)
     for epoch in range(1, args.epochs + 1):
         model.train()
         running_loss = 0.0
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--images", type=str, default="data/frames_ir", help="папка с изображениями")
     p.add_argument("--out-dir", type=str, default="checkpoints", help="куда сохранять модели")
-    p.add_argument("--epochs", type=int, default=20, help="количество эпох")
+    p.add_argument("--epochs", type=int, default=100, help="количество эпох")
     p.add_argument("--batch", type=int, default=8, help="размер батча")
     p.add_argument("--lr", type=float, default=1e-3, help="learning rate")
     p.add_argument("--img-size", type=int, default=512, help="размер входного изображения")
