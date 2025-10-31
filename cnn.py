@@ -78,7 +78,8 @@ class CnnDetector(nn.Module):
             nn.Conv2d(1, 32, kernel_size=8, stride=8, padding=0),  
         )
         self.classifier = nn.Sequential(
-            nn.Linear(32, num_classes)
+            nn.Linear(32, num_classes),
+            nn.Softmax(dim=-1)
         )
 
     def forward(self, x):
