@@ -106,7 +106,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         precision_list.append(precision)
         recall_list.append(recall)
 
-        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
+        # visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
@@ -124,5 +124,5 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     # пример тестирования
-    test_checkpoint = os.path.join(args.out_dir, "cnn_epoch100.pt")
+    test_checkpoint = os.path.join(args.out_dir, "cnn_epoch20.pt")
     test_cnn(test_checkpoint, args.images, args.img_size)

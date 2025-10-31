@@ -61,7 +61,7 @@ class CnnDataset(Dataset):
 
     def __getitem__(self, idx):
         p = self.images[idx]
-        img = Image.open(p).convert("RGB")
+        img = Image.open(p).convert("L")
         img_t = self.transform(img)
         labels = self._read_labels(p)
         return img_t, labels, str(p.name)
@@ -75,12 +75,10 @@ class CnnDetector(nn.Module):
         self.num_classes = num_classes
         super(CnnDetector, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=8, stride=8, padding=0),  
+            nn.Conv2d(1, 32, kernel_size=8, stride=8, padding=0),  
         )
         self.classifier = nn.Sequential(
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, num_classes)  
+            nn.Linear(32, num_classes)
         )
 
     def forward(self, x):
@@ -106,7 +104,7 @@ class CnnLoss(nn.Module):
 
 def test_random_input():
     print("Testing CNN Detector with random input...")
-    img = torch.randn((1, 3, 512, 512))
+    img = torch.randn((1, 1, 512, 512))
     model = CnnDetector(num_classes=2)
     out = model(img)
     print(out.shape)  # ожидается (1, H', W', num_classes)
