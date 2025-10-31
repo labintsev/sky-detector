@@ -15,11 +15,13 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
 
     img_np = img.permute(1, 2, 0).cpu().numpy()
     # Visualization of predictions and ground truth boxes
-    fig, ax = plt.subplots(1, 2)
+    fig, ax = plt.subplots(1, 3)
     ax[0].imshow(img_np)
     ax[0].set_title("CNN Predictions")
     ax[1].imshow(img_np)
     ax[1].set_title(f"Ground Truth {img_name}")
+    ax[2].imshow(img_np)
+    ax[2].set_title("Bounding Boxes")
 
     grid_size = predictions.shape[0]
     cell_h = img_np.shape[0] / grid_size
@@ -47,7 +49,25 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
                     color = 'blue' if cls_ == 0 else 'red'
                     rect = plt.Rectangle((x-cell_w/2, y-cell_h/2), cell_w, cell_h, linewidth=2, edgecolor=color, facecolor='none')
                     ax[1].add_patch(rect)
-    
+    # Draw bounding boxes
+    label_file_name = os.path.splitext(img_name)[0] + ".txt"
+    label_path = os.path.join("data/frames_ir", label_file_name)
+    if os.path.exists(label_path):    
+        with open(label_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 5:
+                    cls_ = int(float(parts[0]))
+                    x_center = float(parts[1]) * img_np.shape[1]
+                    y_center = float(parts[2]) * img_np.shape[0]
+                    box_w = float(parts[3]) * img_np.shape[1]
+                    box_h = float(parts[4]) * img_np.shape[0]
+                    x_min = x_center - box_w / 2   
+                    y_min = y_center - box_h / 2
+                    color = 'blue' if cls_ == 0 else 'red'
+                    rect = plt.Rectangle((x_min, y_min), box_w, box_h, linewidth=2, edgecolor=color, facecolor='none')
+                    ax[2].add_patch(rect)
+
     mng = plt.get_current_fig_manager()
     mng.window.state('zoomed')    
     plt.show()
@@ -70,23 +90,23 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
 
     precision_list, recall_list = [], []
 
-    for img_t, labels, img_name in dataloader:
+    for img_t, grid_labels, img_name in dataloader:
         img_t = img_t.to(device)
         with torch.no_grad():
             preds = model(img_t)
         # compute precision and recall here
         preds = preds[0].cpu()
-        labels = labels[0].cpu()
-        threshold = 0.5
-        tp = ((preds > threshold) & (labels > threshold)).sum().item()
-        fp = ((preds > threshold) & (labels <= threshold)).sum().item()
-        fn = ((preds <= threshold) & (labels > threshold)).sum().item()
+        grid_labels = grid_labels[0].cpu()
+        threshold = 0.25
+        tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
+        fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
+        fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         precision_list.append(precision)
         recall_list.append(recall)
 
-        # visualize_cnn_predictions(img_t[0], preds, labels, img_name[0])
+        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
