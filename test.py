@@ -6,7 +6,7 @@ from torchvision import transforms
 from cnn import CnnDetector, CnnDataset
 
 
-def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labels: torch.Tensor, img_name: str):
+def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labels: torch.Tensor, img_name: str, threshold: float):
     """ img: (3, H, W) tensor
         predictions: (grid_size, grid_size, num_classes) tensor
         """
@@ -31,9 +31,11 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
     for i in range(grid_size):
         for j in range(grid_size):
             max_prob = 0.0
+            cls_max = -1
             for cls_ in range(predictions.shape[2]):
                 prob = predictions[i, j, cls_].item()
-                if prob > 0.9:  # порог по предсказанному значению, может быть больше 1.0
+                if prob > threshold:  # порог по предсказанному значению
+                    print(f"Cell ({i}, {j}): predictions = {predictions[i, j].tolist()}")
                     x = j * cell_w
                     y = i * cell_h
                     if prob > max_prob:
@@ -94,10 +96,11 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         img_t = img_t.to(device)
         with torch.no_grad():
             preds = model(img_t)
+            preds = torch.sigmoid(preds)
         # compute precision and recall here
         preds = preds[0].cpu()
         grid_labels = grid_labels[0].cpu()
-        threshold = 0.9
+        threshold = 0.01
         tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
         fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
         fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()
@@ -106,7 +109,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         precision_list.append(precision)
         recall_list.append(recall)
 
-        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
+        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
@@ -124,5 +127,5 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     # пример тестирования
-    test_checkpoint = os.path.join(args.out_dir, "cnn_epoch100.pt")
+    test_checkpoint = os.path.join(args.out_dir, "cnn_2layers_BCE_epoch100.pt")
     test_cnn(test_checkpoint, args.images, args.img_size)
