@@ -92,7 +92,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         # compute precision and recall here
         preds = preds[0].cpu()
         grid_labels = grid_labels[0].cpu()
-        threshold = 0.25
+        threshold = 0.9
         tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
         fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
         fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()

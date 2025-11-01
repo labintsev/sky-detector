@@ -20,9 +20,9 @@ def visualize_cnn_filters(model: CnnDetector):
         filt = weights[i, 0, :, :]  # assuming single channel input
         ax.imshow(filt, cmap='gray')
         ax.axis('off')
-    plt.savefig('filters.png')
+    plt.savefig('data/article/cnn/filters.png')
 
 if __name__ == "__main__":
     model = CnnDetector(num_classes=2)
-    model.load_state_dict(torch.load("checkpoints/cnn_epoch20.pt", map_location="cpu")["model"])
+    model.load_state_dict(torch.load("checkpoints/cnn_epoch100.pt", map_location="cpu")["model"])
     visualize_cnn_filters(model)
