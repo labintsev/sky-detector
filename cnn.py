@@ -80,7 +80,9 @@ class CnnDetector(nn.Module):
             nn.Conv2d(1, 32, kernel_size=8, stride=8, padding=0),  
         )
         self.classifier = nn.Sequential(
-            nn.Linear(32, num_classes)
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, num_classes)
         )
 
     def forward(self, x):
@@ -98,7 +100,7 @@ class CnnLoss(nn.Module):
     """
     def __init__(self):
         super(CnnLoss, self).__init__()
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCEWithLogitsLoss()
 
     def forward(self, predictions, targets):
         return self.criterion(predictions, targets)
