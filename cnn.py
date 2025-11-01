@@ -41,10 +41,12 @@ class CnnDataset(Dataset):
                 parts = line.strip().split()
                 if len(parts) >= 5:
                     cls_ = int(float(parts[0]))
-                    x_min = float(parts[1])
-                    y_min = float(parts[2])
-                    x_max = x_min + float(parts[3])
-                    y_max = y_min + float(parts[4])
+                    x_center = float(parts[1])
+                    y_center = float(parts[2])
+                    x_min = x_center - float(parts[3]) / 2
+                    y_min = y_center - float(parts[4]) / 2
+                    x_max = x_center + float(parts[3]) / 2
+                    y_max = y_center + float(parts[4]) / 2
                     labels.append([cls_, x_min, y_min, x_max, y_max])
 
         # Create a grid of class probabilities
