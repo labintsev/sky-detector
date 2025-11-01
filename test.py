@@ -16,11 +16,11 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
     img_np = img.permute(1, 2, 0).cpu().numpy()
     # Visualization of predictions and ground truth boxes
     fig, ax = plt.subplots(1, 3)
-    ax[0].imshow(img_np)
+    ax[0].imshow(img_np, cmap='gray')
     ax[0].set_title("CNN Predictions")
-    ax[1].imshow(img_np)
+    ax[1].imshow(img_np, cmap='gray')
     ax[1].set_title(f"Ground Truth {img_name}")
-    ax[2].imshow(img_np)
+    ax[2].imshow(img_np, cmap='gray')
     ax[2].set_title("Bounding Boxes")
 
     grid_size = predictions.shape[0]
@@ -30,24 +30,29 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
     # Draw predicted boxes
     for i in range(grid_size):
         for j in range(grid_size):
+            max_prob = 0.0
             for cls_ in range(predictions.shape[2]):
                 prob = predictions[i, j, cls_].item()
-                if prob > 0.5:  # порог вероятности
+                if prob > 0.9:  # порог по предсказанному значению, может быть больше 1.0
                     x = j * cell_w
                     y = i * cell_h
-                    color = 'blue' if cls_ == 0 else 'red'
-                    rect = plt.Rectangle((x-cell_w/2, y-cell_h/2), cell_w, cell_h, linewidth=2, edgecolor=color, facecolor='none')
+                    if prob > max_prob:
+                        max_prob = prob
+                        cls_max = cls_
+                    if cls_max == 0: color = 'blue'
+                    if cls_max == 1: color = 'red'
+                    rect = plt.Rectangle((x, y), cell_w, cell_h, linewidth=2, edgecolor=color, facecolor='none')
                     ax[0].add_patch(rect)
     # Draw ground truth boxes
     for i in range(grid_size):
         for j in range(grid_size):
             for cls_ in range(labels.shape[2]):
                 prob = labels[i, j, cls_].item()
-                if prob > 0.5:
+                if prob > 0.9:
                     x = j * cell_w
                     y = i * cell_h
                     color = 'blue' if cls_ == 0 else 'red'
-                    rect = plt.Rectangle((x-cell_w/2, y-cell_h/2), cell_w, cell_h, linewidth=2, edgecolor=color, facecolor='none')
+                    rect = plt.Rectangle((x, y), cell_w, cell_h, linewidth=2, edgecolor=color, facecolor='none')
                     ax[1].add_patch(rect)
     # Draw bounding boxes
     label_file_name = os.path.splitext(img_name)[0] + ".txt"
@@ -101,7 +106,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         precision_list.append(precision)
         recall_list.append(recall)
 
-        # visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
+        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0])
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
