@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from cnn import CnnDataset, CnnDetector, CnnLoss
+from cnn import CnnDataset, CnnDetector, CnnLoss, VggDetector
 
 
 def train_cnn(args):
@@ -14,7 +14,7 @@ def train_cnn(args):
     ds = CnnDataset(args.images, img_size=args.img_size, grid_size=args.S, num_classes=args.C)
 
     dl = DataLoader(ds, batch_size=args.batch, shuffle=True, num_workers=2, pin_memory=True)
-    model = CnnDetector(num_classes=args.C).to(device)
+    model = VggDetector(grid_size=args.S, num_classes=args.C).to(device)
     criterion = CnnLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=0.01)
     for epoch in range(1, args.epochs + 1):
@@ -35,7 +35,7 @@ def train_cnn(args):
         avg = running_loss / len(dl)
         print(f"Epoch {epoch}/{args.epochs}  loss={avg:.4f}")
         if epoch % args.save_every == 0:
-            ckpt = Path(args.out_dir) / f"cnn_epoch{epoch}.pt"
+            ckpt = Path(args.out_dir) / f"{model.__class__.__name__}_epoch{epoch}.pt"
             torch.save({"model": model.state_dict(), "epoch": epoch}, ckpt)
             print("Saved", ckpt)
 

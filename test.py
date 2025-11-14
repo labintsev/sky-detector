@@ -3,7 +3,7 @@ import os
 import torch
 from torchvision import transforms
 
-from cnn import CnnDetector, CnnDataset
+from cnn import CnnDetector, CnnDataset, VggDetector
 
 
 def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labels: torch.Tensor, img_name: str, threshold: float):
@@ -80,9 +80,9 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
     plt.show()
 
 
-def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
+def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, threshold = 0.1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CnnDetector().to(device)
+    model.to(device)
     ckpt = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(ckpt["model"])
     model.eval()
@@ -100,7 +100,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         # compute precision and recall here
         preds = preds[0].cpu()
         grid_labels = grid_labels[0].cpu()
-        threshold = 0.01
+        
         tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
         fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
         fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()
@@ -109,7 +109,7 @@ def test_cnn(checkpoint_path: str, images_dir: str, img_size: int):
         precision_list.append(precision)
         recall_list.append(recall)
 
-        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
+        # visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
@@ -121,11 +121,11 @@ if __name__ == "__main__":
     p.add_argument("--images", type=str, default="data/frames_ir", help="папка с изображениями")
     p.add_argument("--out-dir", type=str, default="checkpoints", help="куда сохранять модели")
     p.add_argument("--img-size", type=int, default=512, help="размер входного изображения")
-    p.add_argument("--S", type=int, default=16, help="размер сетки SxS")
-    p.add_argument("--B", type=int, default=1, help="количество боксов на ячейку")
-    p.add_argument("--C", type=int, default=2, help="количество классов")
+    p.add_argument("--modelname", type=str, help="имя файла модели для тестирования")
     args = p.parse_args()
 
     # пример тестирования
-    test_checkpoint = os.path.join(args.out_dir, "cnn_2layers_BCE_epoch100.pt")
-    test_cnn(test_checkpoint, args.images, args.img_size)
+    model = VggDetector(grid_size=64, num_classes=2)
+    args.modelname = "VggDetector_epoch40.pt"
+    test_checkpoint = os.path.join(args.out_dir, args.modelname)
+    test_cnn(model, test_checkpoint, args.images, args.img_size, threshold=0.2)

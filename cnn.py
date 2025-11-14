@@ -73,8 +73,9 @@ class CnnDetector(nn.Module):
     """
     Простая CNN для извлечения признаков и классификации/регрессии каждой клетки в изображении.
     """
-    def __init__(self, num_classes=2):
+    def __init__(self, grid_size=64, num_classes=2):
         self.num_classes = num_classes
+        self.grid_size = grid_size
         super(CnnDetector, self).__init__()
         self.features = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=8, stride=8, padding=0),  
@@ -94,6 +95,43 @@ class CnnDetector(nn.Module):
         return x
 
 
+class VggDetector(nn.Module):   
+    """
+    VggDetector based detector, 
+    output shape: (batch_size, grid_H, grid_W, num_classes)
+    """
+    def __init__(self, grid_size=64, num_classes=2):
+        super(VggDetector, self).__init__()
+        self.num_classes = num_classes
+        self.grid_size = grid_size
+
+        # Define a simple MobileNetV2-like architecture
+        self.vggnet = nn.Sequential(
+            self.convnet_block(1, 8, stride=2),   # 256x256
+            self.convnet_block(8, 16, stride=2),  # 128x128
+            self.convnet_block(16, 32, stride=2), # 64x64 final layer
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, num_classes)
+        )
+    
+    def convnet_block(self, in_channels, out_channels, stride):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(out_channels),
+        )
+
+    def forward(self, x):
+        x = self.vggnet(x)
+        x = x.permute(0, 2, 3, 1)  # (batch, H, W, num_classes)
+        x = self.classifier(x)
+        return x
+
+
 class CnnLoss(nn.Module):
     """
     Простой Cross Entropy Loss для классификации
@@ -109,9 +147,9 @@ class CnnLoss(nn.Module):
 def test_random_input():
     print("Testing CNN Detector with random input...")
     img = torch.randn((1, 1, 512, 512))
-    model = CnnDetector(num_classes=2)
+    model = VggDetector(num_classes=2)
     out = model(img)
-    print(out.shape)  # ожидается (1, H', W', num_classes)
+    print(out.shape)                            # ожидается (1, H', W', num_classes)
     loss_fn = CnnLoss()
     targets = torch.tensor([64*[ 64*[[0,1]]]], dtype=torch.float)  # пример целей
     loss = loss_fn(out, targets)
