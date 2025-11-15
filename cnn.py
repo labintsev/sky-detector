@@ -38,8 +38,11 @@ class GridDataset(Dataset):
         """Read bounding box labels from a text file.
         returns tensor of shape (grid_size, grid_size, num_classes) with class probabilities for each cell
         """
-        label_path = img_path.with_suffix(".txt")
-        if not label_path.exists():
+        label_file_name = img_path.stem + ".txt"
+        label_path = os.path.join(self.label_dir, label_file_name)
+
+        if not os.path.exists(label_path):
+            print
             return torch.zeros((self.grid_size, self.grid_size, self.num_classes), dtype=torch.float32)
 
         labels = []
@@ -69,11 +72,11 @@ class GridDataset(Dataset):
         return grid
 
     def __getitem__(self, idx):
-        p = self.images[idx]
-        img = Image.open(p).convert("L")
+        img_path = self.images[idx]
+        img = Image.open(img_path).convert("L")
         img_t = self.transform(img)
-        labels = self._read_labels(p)
-        return img_t, labels, str(p.name)
+        labels = self._read_labels(img_path)
+        return img_t, labels, str(img_path.name)
 
 
 class CnnDetector(nn.Module):
