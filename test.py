@@ -90,30 +90,32 @@ def test_cnn(model, checkpoint_path: str, data_dir: str, img_size: int, threshol
     dataset = GridDataset(data_dir, img_size=img_size, grid_size=64, num_classes=2)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
 
-    precision_list, recall_list = [], []
+    precision_list, recall_list = [[], []], [[], []]
 
     for img_t, grid_labels, img_name in dataloader:
-        print(f"Processing image: {img_name[0]}")
         img_t = img_t.to(device)
         with torch.no_grad():
             preds = model(img_t)
             preds = torch.sigmoid(preds)
         # compute precision and recall here
-        preds = preds[0].cpu()
-        grid_labels = grid_labels[0].cpu()
-        tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
-        fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
-        fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        precision_list.append(precision)
-        recall_list.append(recall)
+        for cls_ in range(preds.shape[3]):
+            pred_per_class = preds[0, :, :, cls_].cpu()
+            grid_labels_per_class = grid_labels[0, :, :, cls_].cpu()
+            tp = ((pred_per_class > threshold) & (grid_labels_per_class > threshold)).sum().item()
+            fp = ((pred_per_class > threshold) & (grid_labels_per_class <= threshold)).sum().item()
+            fn = ((pred_per_class <= threshold) & (grid_labels_per_class > threshold)).sum().item()
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            precision_list[cls_].append(precision)
+            recall_list[cls_].append(recall)
 
-        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
+        # visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
 
-    avg_precision = sum(precision_list) / len(precision_list)
-    avg_recall = sum(recall_list) / len(recall_list)
-    print(f"Average Precision: {avg_precision:.4f}, Average Recall: {avg_recall:.4f}")
+    
+    avg_precisions = [sum(p) / len(p) for p in precision_list]
+    avg_recalls = [sum(r) / len(r) for r in recall_list]
+    for cls_ in range(len(avg_precisions)):
+        print(f"Class {cls_}: Average Precision: {avg_precisions[cls_]:.4f}, Average Recall: {avg_recalls[cls_]:.4f}")
 
 
 if __name__ == "__main__":
