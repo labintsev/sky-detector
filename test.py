@@ -80,19 +80,20 @@ def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labe
     plt.show()
 
 
-def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, threshold = 0.1):
+def test_cnn(model, checkpoint_path: str, data_dir: str, img_size: int, threshold: float):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     ckpt = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(ckpt["model"])
     model.eval()
 
-    dataset = GridDataset(images_dir, img_size=img_size, grid_size=64, num_classes=2)
+    dataset = GridDataset(data_dir, img_size=img_size, grid_size=64, num_classes=2)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
 
     precision_list, recall_list = [], []
 
     for img_t, grid_labels, img_name in dataloader:
+        print(f"Processing image: {img_name[0]}")
         img_t = img_t.to(device)
         with torch.no_grad():
             preds = model(img_t)
@@ -100,7 +101,6 @@ def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, thresh
         # compute precision and recall here
         preds = preds[0].cpu()
         grid_labels = grid_labels[0].cpu()
-        
         tp = ((preds > threshold) & (grid_labels > threshold)).sum().item()
         fp = ((preds > threshold) & (grid_labels <= threshold)).sum().item()
         fn = ((preds <= threshold) & (grid_labels > threshold)).sum().item()
@@ -109,7 +109,7 @@ def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, thresh
         precision_list.append(precision)
         recall_list.append(recall)
 
-        # visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
+        visualize_cnn_predictions(img_t[0], preds, grid_labels, img_name[0], threshold)
 
     avg_precision = sum(precision_list) / len(precision_list)
     avg_recall = sum(recall_list) / len(recall_list)
@@ -118,7 +118,7 @@ def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, thresh
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--images", type=str, default="data/frames_ir", help="папка с изображениями")
+    p.add_argument("--dataset", type=str, default="data/frames_ir", help="папка с данными")
     p.add_argument("--out-dir", type=str, default="checkpoints", help="куда сохранять модели")
     p.add_argument("--img-size", type=int, default=512, help="размер входного изображения")
     p.add_argument("--modelname", type=str, help="имя файла модели для тестирования")
@@ -128,4 +128,4 @@ if __name__ == "__main__":
     model = VggDetector(grid_size=64, num_classes=2)
     args.modelname = "VggDetector_epoch100.pt"
     test_checkpoint = os.path.join(args.out_dir, args.modelname)
-    test_cnn(model, test_checkpoint, args.images, args.img_size, threshold=0.33)
+    test_cnn(model, test_checkpoint, args.dataset, args.img_size, threshold=0.33)
