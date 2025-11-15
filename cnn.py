@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import numpy as np
 
@@ -7,14 +8,19 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 
-class CnnDataset(Dataset):
+class GridDataset(Dataset):
     """
-    Набор данных для обучения модели CNN detector:
-      - images в image_dir (jpg/png)
-      - для каждого image.jpg должен быть image.txt с аннотациями: class x_min y_min w, h (нормированные координаты)
+    Набор данных Yolo формата для обучения модели CNN detector:
+      - data_dir содержит две папки: images и labels
+      - images - изображения jpg/png
+      - labels - для каждого image.jpg должен быть image.txt с аннотациями: [class_id x_min y_min w h] (нормированные координаты)
+    
+    Возвращает тензор изображения и тензор - сетку с метками (grid_size, grid_size, num_classes)
     """
-    def __init__(self, image_dir: str, img_size: int, grid_size: int, num_classes: int, transform=None):
-        self.image_dir = Path(image_dir)
+    def __init__(self, data_dir: str, img_size: int, grid_size: int, num_classes: int, transform=None):
+        self.data_dir = Path(data_dir)
+        self.image_dir = Path(os.path.join(self.data_dir, "images"))
+        self.label_dir = Path(os.path.join(self.data_dir, "labels"))
         self.images = sorted([p for p in self.image_dir.glob("*.*") if p.suffix.lower() in [".jpg", ".jpeg", ".png"]])
         self.img_size = img_size
         self.grid_size = grid_size
@@ -22,6 +28,7 @@ class CnnDataset(Dataset):
         self.transform = transform or transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
+            transforms.Normalize(mean=[0.0], std=[1.0])
         ])
 
     def __len__(self):
@@ -159,7 +166,7 @@ def test_random_input():
 
 def test_dataloader():
     print("Testing RCNN Dataset and DataLoader...")
-    dataset = CnnDataset(image_dir="data/frames_ir", img_size=512, grid_size=64, num_classes=2)
+    dataset = GridDataset(data_dir="data/frames_ir", img_size=512, grid_size=64, num_classes=2)
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
     for imgs, labels, names in dataloader:
         print(f"Batch images shape: {imgs.shape}")  # ожидается (batch_size, 3, 512, 512)

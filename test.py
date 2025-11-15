@@ -3,7 +3,7 @@ import os
 import torch
 from torchvision import transforms
 
-from cnn import CnnDetector, CnnDataset, VggDetector
+from cnn import CnnDetector, GridDataset, VggDetector
 
 
 def visualize_cnn_predictions(img: torch.Tensor, predictions: torch.Tensor, labels: torch.Tensor, img_name: str, threshold: float):
@@ -87,7 +87,7 @@ def test_cnn(model, checkpoint_path: str, images_dir: str, img_size: int, thresh
     model.load_state_dict(ckpt["model"])
     model.eval()
 
-    dataset = CnnDataset(images_dir, img_size=img_size, grid_size=64, num_classes=2)
+    dataset = GridDataset(images_dir, img_size=img_size, grid_size=64, num_classes=2)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
 
     precision_list, recall_list = [], []
@@ -126,6 +126,6 @@ if __name__ == "__main__":
 
     # пример тестирования
     model = VggDetector(grid_size=64, num_classes=2)
-    args.modelname = "VggDetector_epoch40.pt"
+    args.modelname = "VggDetector_epoch100.pt"
     test_checkpoint = os.path.join(args.out_dir, args.modelname)
-    test_cnn(model, test_checkpoint, args.images, args.img_size, threshold=0.2)
+    test_cnn(model, test_checkpoint, args.images, args.img_size, threshold=0.33)

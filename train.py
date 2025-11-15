@@ -6,12 +6,12 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from cnn import CnnDataset, CnnDetector, CnnLoss, VggDetector
+from cnn import GridDataset, CnnDetector, CnnLoss, VggDetector
 
 
 def train_cnn(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ds = CnnDataset(args.images, img_size=args.img_size, grid_size=args.S, num_classes=args.C)
+    ds = GridDataset(args.images, img_size=args.img_size, grid_size=args.S, num_classes=args.C)
 
     dl = DataLoader(ds, batch_size=args.batch, shuffle=True, num_workers=2, pin_memory=True)
     model = VggDetector(grid_size=args.S, num_classes=args.C).to(device)
